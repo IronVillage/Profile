@@ -1,6 +1,6 @@
 # Bet Slip Classification System
 
-An ensemble ML model for classifying sports betting slip images. Built for esports betting analysis at scale.
+An ensemble ML model for classifying DFS sports betting slip images.
 
 ## Architecture
 
@@ -63,4 +63,5 @@ Models were trained on 10,000+ manually labeled bet slip images from sources. Th
 - 95% classification accuracy
 - Automatic GCS upload for approved slips
 - Handles OCR failures gracefully
+
 
