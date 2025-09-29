@@ -50,7 +50,7 @@ The Dockerfile uses a simple bash loop for 24/7 operation - clean and reliable.
 
 ## Model Training
 
-Models were trained on 10,000+ manually labeled bet slip images from Discord, Twitter, and Reddit sources. The ensemble approach handles:
+Models were trained on 10,000+ manually labeled bet slip images from sources. The ensemble approach handles:
 
 - Varying image quality and formats
 - Multiple sportsbook layouts
@@ -63,3 +63,4 @@ Models were trained on 10,000+ manually labeled bet slip images from Discord, Tw
 - 95% classification accuracy
 - Automatic GCS upload for approved slips
 - Handles OCR failures gracefully
+
