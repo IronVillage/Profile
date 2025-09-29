@@ -6,7 +6,7 @@
 
 -----
 
-An independent quantitative modeler with a five-year record of building profitable models for Esports and UFC markets. My process is rooted in first-principles domain analysis, engineering high-impact features and the strategic use of model ensembles. My current focus is the player prop market (PrizePicks, etc.), where I am architecting agent-based data pipelines to fuel advanced machine learning applications and my private modeling.
+I'm a quantitative modeler with a five-year record of building profitable models for Esports and UFC markets. My process is rooted in first-principles domain analysis, engineering high-impact features and the strategic use of model ensembles. My current focus is the player prop market (PrizePicks, etc.), where I am architecting agent-based data pipelines to fuel advanced machine learning applications and my private modeling.
 
 -----
 
