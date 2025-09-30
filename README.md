@@ -62,9 +62,9 @@ Decided not to work with round by round data here, so many more possibilities fo
    │  massey_rating_30  │    │  elo_rating_k13  │    │  adj_rounds_won_6m  │
    │  massey_rating_25  │    │  elo_rating_k21  │    │  adj_rounds_won_5m  │
    │  massey_rating_20  │    │  elo_rating_k34  │    │  adj_rounds_won_4m  │
-   │  massey_rating_15  │    │  elo_rating_k13  │    │  adj_rounds_won_3m  │
-   │  massey_rating_10  │    │  elo_rating_k13  │    │  adj_rounds_won_2m  │
-   │  massey_rating_05  │    │  elo_rating_k13  │    │  adj_rounds_won_1m  │
+   │  massey_rating_15  │    │  elo_rating_k55  │    │  adj_rounds_won_3m  │
+   │  massey_rating_10  │    │  elo_rating_k89  │    │  adj_rounds_won_2m  │
+   │  massey_rating_05  │    │  elo_rating_k144  │    │  adj_rounds_won_1m  │
    └─────────┬──────────┘    └────────┬─────────┘    └──────────┬──────────┘
              │                        │                         │
              ▼                        ▼                         ▼
