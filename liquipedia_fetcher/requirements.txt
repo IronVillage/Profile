@@ -1,0 +1,12 @@
+# MLBB Liquipedia Dataset Creator
+# Python dependencies
+
+# Data fetching and parsing
+requests>=2.31.0
+
+# Data manipulation
+pandas>=2.0.0
+
+# Date/time handling (included with Python standard library)
+# Standard library: re, time, hashlib, datetime
+

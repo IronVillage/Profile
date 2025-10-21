@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Generated/runtime files
+video.mp4
+frames/
+stat_screens/
+games.json
+*.log
+
+# Large data files (optional - uncomment if you don't want to track these)
+# *.csv
+# *.pth
+
+# Google Cloud credentials
+*.json
+!hero_name_mappings.json
+!team_name_mappings.json
+!package.json
+
