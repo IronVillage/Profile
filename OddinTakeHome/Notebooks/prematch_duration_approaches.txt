@@ -1,0 +1,310 @@
+PREMATCH DURATION PREDICTION APPROACHES
+========================================
+
+PROBLEM STATEMENT:
+The current embedding models use hero picks/bans and side information, making them post-draft models.
+For true prematch prediction, we need approaches that only use team identities and historical data.
+
+KEY CONSTRAINTS FOR PREMATCH:
+❌ No hero picks/bans
+❌ No side information  
+❌ No data from current match/series
+✅ Only team identities, historical stats, tournament context
+
+
+APPROACH 1: TEAM SPEED EMBEDDINGS
+==================================
+Train an embedding model where each team learns a "playstyle vector" that captures their speed tendencies.
+
+Implementation:
+```python
+class TeamSpeedEmbedding(nn.Module):
+    def __init__(self, n_teams, embedding_dim=32):
+        super().__init__()
+        self.team_embed = nn.Embedding(n_teams, embedding_dim)
+        
+        self.fc = nn.Sequential(
+            nn.Linear(embedding_dim * 2, 64),  # concat both teams
+            nn.ReLU(),
+            nn.Dropout(0.2),
+            nn.Linear(64, 32),
+            nn.ReLU(),
+            nn.Linear(32, 1)
+        )
+    
+    def forward(self, team1_id, team2_id):
+        t1_emb = self.team_embed(team1_id)
+        t2_emb = self.team_embed(team2_id)
+        combined = torch.cat([t1_emb, t2_emb], dim=1)
+        return self.fc(combined)
+```
+
+PROS: 
+- Learns latent playstyle factors beyond just average duration
+- Can capture complex team interactions
+- Neural network can learn non-linear patterns
+
+CONS: 
+- Needs sufficient data per team
+- Cold start problem for new teams
+- Less interpretable
+
+
+APPROACH 2: EXPLICIT SPEED RATINGS
+===================================
+Calculate interpretable speed metrics for each team using hand-crafted features.
+
+Team Metrics:
+```python
+# For each team, calculate:
+team_metrics = {
+    'avg_duration': historical_avg,
+    'duration_vs_strong': avg_duration_vs_top_quartile_elo,
+    'duration_vs_weak': avg_duration_vs_bottom_quartile_elo,
+    'duration_volatility': std_dev_duration,
+    'recent_speed_trend': (last_30d_avg - last_90d_avg),
+    'aggression_proxy': avg_duration_when_winning_vs_losing
+}
+```
+
+PROS: 
+- Interpretable and explainable
+- Works well with limited data
+- Easy to debug and validate
+- Domain experts can understand the model
+
+CONS: 
+- Feature engineering heavy
+- Might miss complex interactions
+- Manual feature selection required
+
+
+APPROACH 3: HIERARCHICAL/ENHANCED FEATURES
+===========================================
+Enhance existing team1_hist_dur_90D and team2_hist_dur_90D features with additional context.
+
+Feature Set:
+```python
+features = [
+    'team1_hist_dur_90D',
+    'team2_hist_dur_90D', 
+    'sum_90D',  # already implemented
+    'diff_90D',  # NEW: abs(team1 - team2) speeds
+    'team1_elo', 
+    'team2_elo',
+    'elo_diff',
+    'team1_duration_variance_90D',  # NEW: consistency metric
+    'team2_duration_variance_90D',  # NEW: consistency metric
+    'interaction_history_avg_dur',  # NEW: head-to-head avg duration
+    'tier_encoded',  # NEW: A-tier vs B-tier tournaments
+    'tournament_avg_speed_90D',  # NEW: meta speed in tournament
+]
+```
+
+PROS:
+- Builds on existing working code
+- Quick to implement
+- Combines multiple signal sources
+- Still interpretable
+
+CONS:
+- Linear assumptions may not capture interactions
+- Feature correlation issues
+- Still requires feature engineering
+
+
+APPROACH 4: TIME-VARYING SPEED RATINGS
+=======================================
+Recognize that team "speed" changes over time due to meta shifts, roster changes, and form.
+
+Implementation:
+```python
+def calculate_speed_rating(team, current_date, df, decay_rate=0.95):
+    """
+    Calculate exponentially weighted speed rating for a team.
+    More recent matches have higher weight.
+    """
+    team_matches = df[(df['team1']==team) | (df['team2']==team)]
+    team_matches = team_matches[team_matches['match_date'] < current_date]
+    
+    # Get durations and dates
+    durations = []
+    days_ago = []
+    
+    for idx, row in team_matches.iterrows():
+        durations.append(row['duration'])
+        days_diff = (current_date - row['match_date']).days
+        days_ago.append(days_diff)
+    
+    # Exponentially weighted average
+    weights = np.array([decay_rate ** d for d in days_ago])
+    weighted_avg = np.average(durations, weights=weights)
+    
+    return weighted_avg
+```
+
+Alternative: Use rolling windows with different time horizons
+```python
+features = [
+    'team1_speed_7d',
+    'team1_speed_30d',
+    'team1_speed_90d',
+    'team1_speed_trend',  # difference between recent and historical
+]
+```
+
+PROS:
+- Captures temporal dynamics
+- Adapts to meta shifts
+- Recent form weighted appropriately
+
+CONS:
+- More complex implementation
+- Hyperparameter tuning for decay rate
+- Still cold start problem
+
+
+APPROACH 5: MATCHUP-SPECIFIC FEATURES
+======================================
+Some teams might play faster/slower against specific opponent styles.
+
+Interaction Features:
+```python
+features = [
+    'both_teams_avg_speed',  # (t1_avg + t2_avg) / 2
+    'speed_mismatch',  # abs(t1_avg - t2_avg)
+    'elo_weighted_speed',  # faster team's speed * their elo advantage
+    'tournament_avg_speed',  # meta speed in this tournament
+    'h2h_avg_duration',  # historical head-to-head average
+    'aggressive_vs_defensive',  # fast team vs slow team interaction
+]
+```
+
+Style Clustering:
+```python
+# Use K-means to cluster teams by playstyle
+# Then create features based on cluster matchups
+from sklearn.cluster import KMeans
+
+# Cluster features: avg_duration, duration_variance, avg_kills, etc.
+team_styles = KMeans(n_clusters=5).fit(team_features)
+
+# Then use cluster ID as categorical feature or cluster distance
+```
+
+PROS:
+- Captures team chemistry/style matchups
+- Can identify "rock-paper-scissors" dynamics
+- Useful for diverse metas
+
+CONS:
+- Requires sufficient matchup history
+- Interaction explosion with many features
+- Overfitting risk
+
+
+RECOMMENDED IMPLEMENTATION STRATEGY
+===================================
+
+PHASE 1: Foundation (Start Here)
+---------------------------------
+Implement Approach 2 (Explicit Speed Ratings) + Approach 3 (Enhanced Features)
+
+Why?
+1. You already have team1_hist_dur_90D and team2_hist_dur_90D working
+2. Adding variance, h2h history, and tier info is straightforward
+3. It's interpretable and debuggable
+4. Quick wins with minimal code changes
+
+Steps:
+1. Add variance features for each team
+2. Add head-to-head duration history
+3. Add tournament tier encoding
+4. Add speed differential features (diff, ratio)
+5. Test with your existing Linear Regression + RF stack
+
+
+PHASE 2: Advanced (Layer On Top)
+---------------------------------
+Add Approach 1 (Team Speed Embeddings) as OOF predictions
+
+Why?
+- Similar to how you currently use RF OOF predictions
+- Can capture non-linear patterns the explicit features miss
+- Acts as an ensemble component
+
+Implementation:
+```python
+features_prematch_v1 = [
+    'sum_90D',
+    'diff_90D', 
+    'elo_diff',
+    'team1_duration_variance_90D',
+    'team2_duration_variance_90D',
+    'h2h_avg_duration',
+    'tournament_tier_encoded'
+]
+
+# Train embedding model with OOF CV
+# Then add as feature:
+features_prematch_v2 = features_prematch_v1 + ['team_embed_oof_pred']
+```
+
+
+PHASE 3: Optimization (Polish)
+-------------------------------
+Experiment with Approach 4 (Time-Varying) and Approach 5 (Matchups)
+
+- Try different time decay rates
+- Test multiple time horizons
+- Add style clustering if you see gains
+- Consider tournament-specific meta adjustments
+
+
+SPECIAL CONSIDERATIONS
+=======================
+
+Cold Start Problem:
+-------------------
+For teams with <10 historical matches:
+1. Use global tournament average as prior
+2. Shrink estimates toward the mean (Bayesian approach)
+3. Use league/region averages as fallback
+4. Consider player-level data if available
+
+Meta Shifts:
+------------
+When game balance patches occur:
+1. Reduce weight of pre-patch data
+2. Use shorter rolling windows
+3. Add patch/version as categorical feature
+4. Monitor model performance over time
+
+Tournament Tier Effects:
+------------------------
+A-tier tournaments may have different speeds than B-tier:
+1. Encode tier as categorical feature
+2. Calculate tier-specific baseline speeds
+3. Use hierarchical model with tournament random effects
+
+Evaluation:
+-----------
+- Use GroupKFold by match_id (you're already doing this ✓)
+- Monitor MAE and RMSE
+- Track performance by tournament tier
+- Look at residuals by ELO differential
+- Check calibration across duration ranges
+
+
+NEXT STEPS
+==========
+
+1. Create features for Approach 2 + 3 (explicit speed ratings)
+2. Test baseline with Linear Regression
+3. Compare to your current -278.69 RMSE baseline
+4. If promising, implement Approach 1 (embeddings) as OOF feature
+5. Stack all predictions together
+6. Document what "prematch" improvements you achieved
+
+Target: Beat your baseline and create a truly prematch model!
+
